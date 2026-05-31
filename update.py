@@ -37,16 +37,10 @@ def main():
     archive_url = f"https://github.com/{repo_owner}/{repo_name}/archive/{commit_hash}.tar.gz"
     print(f"Fetching hash of archive {archive_url}")
 
-    res = run(["nix-prefetch-url", "--type", "sha256", archive_url], stdout=PIPE, stderr=stderr)
+    res = run(["nix-shell", "-p", "nix-prefetch-git", "--run", f"nix-prefetch-git --fetch-submodules https://github.com/{repo_owner}/{repo_name}.git --rev {commit_hash} --quiet --no-add-path"], stdout=PIPE, stderr=stderr)
     res.check_returncode()
     
-    base32_hash = res.stdout.decode().strip()
-    print(f"Base32 hash is {base32_hash}")
-
-    res = run(["nix", "hash", "convert", "--hash-algo", "sha256", "--to", "sri", base32_hash], stdout=PIPE, stderr=stderr)
-    res.check_returncode()
-
-    sri_hash = res.stdout.decode().strip()
+    sri_hash = loads(res.stdout.decode().strip())["hash"]
     print(f"SRI-hash is {sri_hash}")
 
     file_contents = {
