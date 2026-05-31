@@ -36,7 +36,7 @@ def main():
     
     file_contents = {
         "hash": commit_hash,
-        "version": commit_hash[:7]
+        "version": commit_hash[7:14]
     }
     file_text = dumps(file_contents, indent=4)
     print(f"New file text is\n{file_text}")
@@ -44,12 +44,12 @@ def main():
     Path("repo.json").write_text(file_text)
     print("Wrote new contents to file")
 
-    run(["git", "config", "user.name" "daily-update-run"], stdout=stdout, stderr=stderr).check_returncode()
+    run(["git", "config", "user.name", "daily-update-run"], stdout=stdout, stderr=stderr).check_returncode()
     run(["git", "config", "user.email", "git@al1as.me"], stdout=stdout, stderr=stderr).check_returncode()
 
     run(["git", "add", "repo.json"], stdout=stdout, stderr=stderr).check_returncode()
     run(["git", "commit", "-m", f"Automatic update {last_commit_hash} -> {commit_hash}"], stdout=stdout, stderr=stderr).check_returncode()
-    run(["git", "remote", "set-url", f"origin https://mohrjonas:{environ.get("GITHUB_TOKEN")}@github.com/mohrjonas/FreeCADDaily.nix.git"], stdout=stdout, stderr=stderr).check_returncode()
+    run(["git", "remote", "set-url", "origin", f"https://mohrjonas:{environ.get("GITHUB_TOKEN")}@github.com/mohrjonas/FreeCADDaily.nix.git"], stdout=stdout, stderr=stderr).check_returncode()
     run(["git", "push", "origin", "main"], stdout=stdout, stderr=stderr).check_returncode()
 
 if __name__ == "__main__":
