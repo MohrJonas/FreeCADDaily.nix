@@ -25,7 +25,7 @@ def main():
     
     response_body = response.json()
 
-    commit_hash = response_body["commit"]["sha"]
+    commit_hash = f"sha256-{response_body["commit"]["sha"]}"
     print(f"Lastest commit hash is {commit_hash}")
 
     if(commit_hash == last_commit_hash):
