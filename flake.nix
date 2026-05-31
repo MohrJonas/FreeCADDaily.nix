@@ -11,8 +11,8 @@
         src = pkgs.fetchFromGitHub {
           owner = "FreeCAD";
           repo = "FreeCAD";
-          tag = repoInfo.version;
-          hash = repoInfo.hash;
+          tag = repoInfo.commitHash;
+          hash = repoInfo.sriHash;
           fetchSubmodules = true;
         };
       });

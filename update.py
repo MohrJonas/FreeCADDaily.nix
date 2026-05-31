@@ -3,7 +3,7 @@ from json import dumps, loads
 from sys import exit, stdout, stderr
 from pathlib import Path
 from os import environ
-from subprocess import run
+from subprocess import run, PIPE
 
 branch_name = "main"
 repo_owner = "freecad"
@@ -13,7 +13,7 @@ def main():
     print("Loading repo info")
     repo_info = loads(Path("repo.json").read_text())
     
-    last_commit_hash = repo_info["hash"]
+    last_commit_hash = repo_info["commitHash"]
     print(f"Last commit hash was {last_commit_hash}")
 
     request_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/branches/{branch_name}"
@@ -25,7 +25,7 @@ def main():
     
     response_body = response.json()
 
-    commit_hash = f"sha256-{response_body["commit"]["sha"]}"
+    commit_hash = response_body["commit"]["sha"]
     print(f"Lastest commit hash is {commit_hash}")
 
     if(commit_hash == last_commit_hash):
@@ -33,10 +33,26 @@ def main():
         exit(0)
 
     print("Repository has been updated since last run, proceeding")
+
+    archive_url = f"https://github.com/{repo_owner}/{repo_name}/archive/{commit_hash}.tar.gz"
+    print(f"Fetching hash of archive {archive_url}")
+
+    res = run(["nix-prefetch-url", "--type", "sha256", archive_url], stdout=PIPE, stderr=stderr)
+    res.check_returncode()
     
+    base32_hash = res.stdout.decode().strip()
+    print(f"Base32 hash is {base32_hash}")
+
+    res = run(["nix", "hash", "convert", "--hash-algo", "sha256", "--to", "sri", base32_hash], stdout=PIPE, stderr=stderr)
+    res.check_returncode()
+
+    sri_hash = res.stdout.decode().strip()
+    print(f"SRI-hash is {sri_hash}")
+
     file_contents = {
-        "hash": commit_hash,
-        "version": commit_hash[7:14]
+        "commitHash": commit_hash,
+        "sriHash": sri_hash,
+        "version": commit_hash[:7]
     }
     file_text = dumps(file_contents, indent=4)
     print(f"New file text is\n{file_text}")
