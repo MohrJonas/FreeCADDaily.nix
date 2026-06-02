@@ -15,6 +15,7 @@
           hash = repoInfo.sriHash;
           fetchSubmodules = true;
         };
+        nativeBuildInputs = prev.nativeBuildInputs ++ [pkgs.gtest];
       });
   };
 }
