@@ -1,9 +1,10 @@
-from requests import get
+from requests import get, request
 from json import dumps, loads
 from sys import exit, stdout, stderr
 from pathlib import Path
 from os import environ
 from subprocess import run, PIPE
+from datetime import datetime, timedelta
 
 branch_name = "main"
 repo_owner = "freecad"
@@ -54,11 +55,29 @@ def main():
     Path("repo.json").write_text(file_text)
     print("Wrote new contents to file")
 
+    print(f"Fetching commit messages")
+    response = get(f"https://api.github.com/repos/{repo_owner}/{repo_name}/commits", headers={
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2026-03-10"
+    }, params={
+        "since": (datetime.now() - timedelta(days=1)).isoformat(),
+        "until": datetime.now().isoformat()
+    })
+
+    if(not response.ok):
+        print(f"Getting commits failed with status code {response.status_code}: {response.text}")
+        exit(1)
+
+    response_body = response.json()
+
+    commit_messages = [commit["commit"]["message"] for commit in response_body]
+    print(f"Commit messages are {"\n".join(commit_messages)}")
+
     run(["git", "config", "user.name", "daily-update-run"], stdout=stdout, stderr=stderr).check_returncode()
     run(["git", "config", "user.email", "git@al1as.me"], stdout=stdout, stderr=stderr).check_returncode()
 
     run(["git", "add", "repo.json"], stdout=stdout, stderr=stderr).check_returncode()
-    run(["git", "commit", "-m", f"Automatic update {last_commit_hash} -> {commit_hash}"], stdout=stdout, stderr=stderr).check_returncode()
+    run(["git", "commit", "-m", f"Automatic update {last_commit_hash} -> {commit_hash}\n{"\n".join(commit_messages)}"], stdout=stdout, stderr=stderr).check_returncode()
     run(["git", "remote", "set-url", "origin", f"https://mohrjonas:{environ.get("GITHUB_TOKEN")}@github.com/mohrjonas/FreeCADDaily.nix.git"], stdout=stdout, stderr=stderr).check_returncode()
     run(["git", "push", "origin", "main"], stdout=stdout, stderr=stderr).check_returncode()
 
