@@ -16,6 +16,9 @@
           fetchSubmodules = true;
         };
         nativeBuildInputs = prev.nativeBuildInputs ++ [pkgs.gtest];
+        patches = [
+          (builtins.elemAt prev.patches 0)
+        ];
       });
   };
 }
