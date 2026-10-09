@@ -19,6 +19,7 @@
           };
           # Disable version checking
           dontVersionCheck = true;
+          nativeBuildInputs = prev.nativeBuildInputs ++ [ pkgs.gtest ];
         }
       );
   };
