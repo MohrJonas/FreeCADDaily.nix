@@ -1,24 +1,25 @@
 {
   description = "Flake providing a daily auto-updating FreeCAD package";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs";
-  outputs = {nixpkgs, ...}: {
-    packages."x86_64-linux"."freecad-daily" = let
-      repoInfo = builtins.fromJSON (builtins.readFile ./repo.json);
-      pkgs = import nixpkgs { system = "x86_64-linux"; };
-    in
-      pkgs.freecad.overrideAttrs (final: prev: {
-        version = repoInfo.version;
-        src = pkgs.fetchFromGitHub {
-          owner = "FreeCAD";
-          repo = "FreeCAD";
-          rev = repoInfo.commitHash;
-          hash = repoInfo.sriHash;
-          fetchSubmodules = true;
-        };
-        nativeBuildInputs = prev.nativeBuildInputs ++ [pkgs.gtest];
-        patches = [
-          (builtins.elemAt prev.patches 0)
-        ];
-      });
+  outputs = { nixpkgs, ... }: {
+    packages."x86_64-linux"."freecad-daily" =
+      let
+        repoInfo = builtins.fromJSON (builtins.readFile ./repo.json);
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+      in
+      pkgs.freecad.overrideAttrs (
+        final: prev: {
+          version = repoInfo.version;
+          src = pkgs.fetchFromGitHub {
+            owner = "FreeCAD";
+            repo = "FreeCAD";
+            rev = repoInfo.commitHash;
+            hash = repoInfo.sriHash;
+            fetchSubmodules = true;
+          };
+          # Disable version checking
+          dontVersionCheck = true;
+        }
+      );
   };
 }
